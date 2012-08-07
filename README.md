@@ -114,5 +114,83 @@ Criteria. Here you are some examples:
 5. Associations
   Till now there's not great difference between Criteria and Seimos. But when using associations Seimos can help avoid a lot of code lines.
 
-  5.1. One level association
+  5.1. Criteria
   
+    Criteria criteria = session.createCriteria(Cat.class);
+    criteria.add(Restrictions.like(“description”, “Pap”)
+      .addOrder(Order.asc(“description”)
+      .setFirstResult(101)
+      .setMaxResult(10);
+      
+    Criteria subCriteria = criteria.createCriteria("kind", "kind");
+    subCriteria.add(Restrictions.eq("description", "description"));
+    
+    List cats = criteria.list();  
+
+  For deep association in more than one level another subCriteria is needed.
+  
+    Criteria criteria = session.createCriteria(Cat.class);
+    criteria.add(Restrictions.like(“description”, “Pap”)
+      .addOrder(Order.asc(“description”)
+      .setFirstResult(101)
+      .setMaxResult(10);
+      
+    Criteria subCriteria = criteria.createCriteria("kind", "kind");
+    subCriteria.add(Restrictions.eq("description", "persa"));
+    
+    Criteria anotherSubCriteria = subCriteria.createCriteria("anAssociation", "anAssociation");
+    anotherSubCriteria.add(Restrictions.eq("attribute", "anything"));
+    
+    /* ... and so on */
+    
+    List cats = criteria.list();  
+
+  5.2. Seimos
+  
+    Filters filters = new Filters();
+    filters.add(new Filters(“description”, “Pap”)
+      .add(new Filter(“description”, Order.ASC))
+      .add(new Filter("kind.description", "persa"))
+      .add(new Filter("kind.anAssociation.attribute", "anything"));
+    List cats = dao.find(filters, 101, 10);
+    
+  Seimos can either define JoinType when adding a Filter with association.
+  
+      .add(new Filter("kind.description", "persa", JoinType.LEFT_OUTER_JOIN))
+
+6. Greedy results
+  Criteria results naturally fetchs a list of Objects but can also being transformed. Of course, in most cases, is necessary use a particular domain, DTO, VO, table mapping, bean or whatever. Criteria has an appropriate transformer for this cases.
+
+  6.1. Criteria
+    
+    Criteria criteria = session.createCriteria(Cat.class);
+    criteria.add(Restrictions.like(“description”, “Pap”)
+      .addOrder(Order.asc(“description”)
+      .setFirstResult(101)
+      .setMaxResult(10);
+      
+    Criteria subCriteria = criteria.createCriteria("kind", "kind");
+    subCriteria.add(Restrictions.eq("description", "persa"));
+    
+    Criteria anotherSubCriteria = subCriteria.createCriteria("anAssociation", "anAssociation");
+    anotherSubCriteria.add(Restrictions.eq("attribute", "anything"));
+    
+    /* ... and so on */
+    
+    criteria.setResultTransformer(new AliasToBeanResultTransformer(Cat.class));
+    
+    List cats = criteria.list();  
+
+  Hibernate has some transformers in its package. AliasToBeanResultTransformer above helps Criteria to fetch results within a list of Cat's. But when Cat have an association with another bean, AliasToBeanResultTransformer is not able to transform.
+  
+  6.2. Seimos
+  
+  The same code in 5.2 already embed a transformer for fetching a list of Cat's. Thus List can be strongly typed.
+  
+    Filters filters = new Filters();
+    filters.add(new Filters(“description”, “Pap”)
+      .add(new Filter(“description”, Order.ASC))
+      .add(new Filter("kind.description", "persa"))
+      .add(new Filter("kind.anAssociation.attribute", "anything"));
+    List<Cat> cats = dao.find(filters, 101, 10);
+
