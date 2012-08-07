@@ -159,8 +159,8 @@ Criteria. Here you are some examples:
   
       .add(new Filter("kind.description", "persa", JoinType.LEFT_OUTER_JOIN))
 
-6. Greedy results
------------------
+6. Transforming results
+-----------------------
   Criteria results naturally fetchs a list of Objects but can also being transformed. Of course, in most cases, is necessary use a particular domain, DTO, VO, table mapping, bean or whatever. Criteria has an appropriate transformer for this cases.
 
   6.1. Criteria
@@ -187,7 +187,7 @@ Criteria. Here you are some examples:
   
   6.2. Seimos
   
-  The same code in 5.2 already embed a transformer for fetching a list of Cat's. Thus List can be strongly typed.
+  The same code in 5.2 already embed a transformer for fetching a list of Cat's. Thus, List can be strongly typed.
   
     Filters filters = new Filters();
     filters.add(new Filters(“description”, “Pap”)
@@ -196,3 +196,100 @@ Criteria. Here you are some examples:
       .add(new Filter("kind.anAssociation.attribute", "anything"));
     List<Cat> cats = dao.find(filters, 101, 10);
 
+7. Projections
+--------------
+  Even narrowing results with Restrictions, Criteria.list() fetchs a greedy collection with all model attributes.
+  Hibernate provides Projections to define which attributes are finally projected or selected.
+
+  7.1. Criteria
+  
+    Criteria criteria = session.createCriteria(Cat.class);
+    criteria.add(Restrictions.like(“description”, “Pap”)
+      .addOrder(Order.asc(“description”)
+      .setFirstResult(101)
+      .setMaxResult(10);
+      
+    Criteria subCriteria = criteria.createCriteria("kind", "kind");
+    subCriteria.add(Restrictions.eq("description", "persa"));
+    
+    Criteria anotherSubCriteria = subCriteria.createCriteria("anAssociation", "anAssociation");
+    anotherSubCriteria.add(Restrictions.eq("attribute", "anything"));
+    
+    criteria.setResultTransformer(new AliasToBeanResultTransformer(Cat.class));
+    
+    /* is something missing here? */
+    
+    criteria.setProjections(Projections.projectionList()
+      .add(Projections.alias(Projections.property(“id”), “id”))
+      .add(Projections.alias(Projections.property(“kind.id”, “kind.id”))
+      .add(Projections.alias(Projections.property(“kind.anAssocation.description”, “kind.anAssociation.description”))
+    
+    List cats = criteria.list();  
+  
+  Running this code, criteria.list() would throw an exception indicating that 'anAssociation.description' is not an attrbute of 'kind'. It's lacking some aliases before. The real code should be:
+  
+    Criteria criteria = session.createCriteria(Cat.class);
+    criteria.add(Restrictions.like(“description”, “Pap”)
+      .addOrder(Order.asc(“description”)
+      .setFirstResult(101)
+      .setMaxResult(10);
+      
+    Criteria subCriteria = criteria.createCriteria("kind", "kind");
+    subCriteria.add(Restrictions.eq("description", "persa"));
+    
+    Criteria anotherSubCriteria = subCriteria.createCriteria("anAssociation", "anAssociation");
+    anotherSubCriteria.add(Restrictions.eq("attribute", "anything"));
+    
+    criteria.setResultTransformer(new AliasToBeanResultTransformer(Cat.class));
+    
+    criteria.crateAlias(“kind.anAssociation”, “kind_anAssociation”);
+
+    criteria.setProjections(Projections.projectionList()
+      .add(Projections.alias(Projections.property(“id”), “id”))
+      .add(Projections.alias(Projections.property(“kind.id”, “kind.id”))
+      .add(Projections.alias(Projections.property(“kind.anAssocation.attribute”, “kind.anAssociation.attribute”))
+    
+    List cats = criteria.list();  
+
+  7.2. Seimos
+  
+  Just as it was at 6.2. All aliases needed are created.
+  
+    Filters filters = new Filters();
+    filters.add(new Filters(“description”, “Pap”)
+      .add(new Filter(“description”, Order.ASC))
+      .add(new Filter("kind.description", "persa"))
+      .add(new Filter("kind.anAssociation.attribute", "anything"));
+    List<Cat> cats = dao.find(filters, 101, 10);
+
+  Filter allows programmer to choose if she needs a projection or just a clausule for filtering. Below, an example if 'id' is used as 'where' clausule but it's not projected.
+  
+    Filters filters = new Filters();
+    filters.add(new Filters(“description”, “Pap”)
+      .add(new Filter("id", 10000, Projection.NO))
+      .add(new Filter(“description”, Order.ASC))
+      .add(new Filter("kind.description", "persa"))
+      .add(new Filter("kind.anAssociation.attribute", "anything"));
+    List<Cat> cats = dao.find(filters, 101, 10);
+
+  Another feature for help adding many attributes is using wildcards and regex in Filter.
+  
+    Filters filters = new Filters();
+    filters.add(new Filters(“description”, “Pap”)
+      .add(new Filter("id", 10000, Projection.NO))
+      .add(new Filter("at*", WildCard.YES))   // adds all attributes that matches with 'at*' regex
+      .add(new Filter(“description”, Order.ASC))
+      .add(new Filter("kind.description", "persa"))
+      .add(new Filter("kind.anAssociation.attribute", "anything"));
+    List<Cat> cats = dao.find(filters, 101, 10);
+
+  This last features is really good for adding all attributes of a model. For this, a special WildCard was created.
+  
+    Filters filters = new Filters();
+    filters.add(new Filters(“description”, “Pap”)
+      .add(new Filter("id", 10000, Projection.NO))
+      .add(new Filter("*", WildCard.YES))   // adds all attributes of Cat. Same of new Filter(".*", WildCard.YES)
+      .add(new Filter(“description”, Order.ASC))
+      .add(new Filter("kind.description", "persa"))
+      .add(new Filter("kind.anAssociation.attribute", "anything"));
+    List<Cat> cats = dao.find(filters, 101, 10);
