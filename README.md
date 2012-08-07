@@ -112,6 +112,7 @@ Criteria. Here you are some examples:
     List cats = dao.find(filters, 101, 10);
     
 5. Associations
+---------------
   Till now there's not great difference between Criteria and Seimos. But when using associations Seimos can help avoid a lot of code lines.
 
   5.1. Criteria
@@ -159,6 +160,7 @@ Criteria. Here you are some examples:
       .add(new Filter("kind.description", "persa", JoinType.LEFT_OUTER_JOIN))
 
 6. Greedy results
+-----------------
   Criteria results naturally fetchs a list of Objects but can also being transformed. Of course, in most cases, is necessary use a particular domain, DTO, VO, table mapping, bean or whatever. Criteria has an appropriate transformer for this cases.
 
   6.1. Criteria
