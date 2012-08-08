@@ -293,3 +293,43 @@ Criteria. Here you are some examples:
       .add(new Filter("kind.description", "persa"))
       .add(new Filter("kind.anAssociation.attribute", "anything"));
     List<Cat> cats = dao.find(filters, 101, 10);
+    
+8. Grouping
+-----------
+
+  Grouping a query is necessary when some agregation is used.
+  
+    // TODO
+    
+9. Setings
+----------
+
+  If you read until here perharps have notices that in Seimos 'dao' is never initialized. Seimos provides some generics classes to help use of Filter and embeds most used CRUD operations.
+  
+  For use it for Cat.class filtering, a CatDao interface and CatDaoImpl must be used in associations with that generics classes.
+  
+    public interface CatDao extends GenericDao<Cat> { /* ... */ }
+    
+    @Repository
+    public class CatDaoImpl extends GenericDaoImpl<Cat> implements CatDao { /* ... */ }
+    
+
+  Most cases need also of a service or manager layer, and Seimos helps it either.
+  
+    public interface CatService extends GenericService<Cat> { /* ... */ }
+    
+    @Service
+    public class CatServiceImpl extends GenericServiceImpl<Cat, CatDao> implements CatService {
+    
+      @Autowired
+      public CatDao catDao;
+      
+      @Override
+      public CatDao getDao() {
+        return catDao;
+      }
+    
+      /* ... */
+    }
+    
+  For each implementation, methods create, find, update and remove are provided. Only if its behaviour is not default, they are overrided.
