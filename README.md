@@ -32,6 +32,7 @@ Criteria. Here you are some examples:
     List cats = dao.find(filters);
     
   Of course both Criteria and Seimos have a lot of restrictions type. For Seimos each new Filter added to filters could use a specific condition for filtering. For example, new Filter's could be used as follows:
+  
     filters.add(new Filter("description", "Pap"));
     filters.add(new Filter("birth", new Date()));
     filters.add(new Filter("serial", 10000, Condition.GREATER);  // Serial for cats? It's just an example :)
